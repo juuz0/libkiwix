@@ -39,7 +39,7 @@ extern "C" {
 #include "server/request_context.h"
 #include "server/response.h"
 
-#include "tools/cache.cpp"
+#include "tools/cache.hpp"
 
 namespace kiwix {
 

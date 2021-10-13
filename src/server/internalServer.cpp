@@ -104,6 +104,15 @@ unsigned parseIllustration(const std::string& s)
   }
   return 0;
 }
+
+// Returns the maximum of the integer environment var value, default value and 1.
+unsigned int getCacheLength(const char* name, unsigned int def) {
+  auto envString = std::getenv(name);
+  if (envString != NULL) {
+    return std::max({(unsigned int) atoi(envString), def, 1U});
+  }
+  return std::max(def, 1U);
+}
 } // unnamed namespace
 
 static IdNameMapper defaultNameMapper;
@@ -141,12 +150,8 @@ InternalServer::InternalServer(Library* library,
   mp_daemon(nullptr),
   mp_library(library),
   mp_nameMapper(nameMapper ? nameMapper : &defaultNameMapper),
-  searcherCache((std::getenv("SEARCHER_CACHE_SIZE") != NULL)
-                ? atoi(std::getenv("SEARCHER_CACHE_SIZE"))
-                : std::max(1, (int) (mp_library->getBookCount(true, true)*0.1))),
-  searchCache((std::getenv("SEARCH_CACHE_SIZE"))
-                ? atoi(std::getenv("SEARCH_CACHE_SIZE"))
-                : SEARCH_CACHE_SIZE)
+  searcherCache(getCacheLength("SEARCHER_CACHE_SIZE", mp_library->getBookCount(true, true)*0.1)),
+  searchCache(getCacheLength("SEARCH_CACHE_SIZE", SEARCH_CACHE_SIZE))
 {}
 
 bool InternalServer::start() {
@@ -590,9 +595,9 @@ std::unique_ptr<Response> InternalServer::handle_search(const RequestContext& re
 
   std::shared_ptr<zim::Searcher> searcher;
   if (archive) {
-    if (searcherCache.exist(bookId)) {
+    try {
       searcher = searcherCache.get(bookId);
-    } else {
+    } catch (std::runtime_error&) {
       searcher = std::make_shared<zim::Searcher>(*archive);
       searcherCache.put(bookId, searcher);
     }
@@ -636,7 +641,7 @@ std::unique_ptr<Response> InternalServer::handle_search(const RequestContext& re
       }
 
       query.setQuery("");
-      queryString = to_string(latitude) + to_string(longitude) + to_string(distance);
+      queryString = "GEO:" + to_string(latitude) + to_string(longitude) + to_string(distance);
       query.setGeorange(latitude, longitude, distance);
     } else {
       // Execute Ft search
@@ -644,15 +649,15 @@ std::unique_ptr<Response> InternalServer::handle_search(const RequestContext& re
           cout << "Performing query `" << patternString << "'" << endl;
       }
 
-      queryString = removeAccents(patternString);
+      queryString = "FT:" + removeAccents(patternString);
       query.setQuery(queryString);
     }
     queryString = bookId + queryString;
 
     std::shared_ptr<zim::Search> search;
-    if (searchCache.exist(queryString)) {
+    try {
       search = searchCache.get(queryString);
-    } else {
+    } catch (std::runtime_error&) {
       search = make_shared<zim::Search>(searcher->search(query));
       searchCache.put(queryString, search);
     }
