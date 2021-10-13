@@ -36,9 +36,11 @@ class LRUCache {
     }
 
     Value_t get(const Key_t& k) {
-      assert(exist(k));
-
       auto it = m_map.find(k);
+      if (it == m_map.end()) {
+        throw std::runtime_error("Entry not cached.");
+      }
+
       m_list.splice(m_list.begin(), m_list, it->second);
       return it->second->second;
     }
@@ -63,7 +65,7 @@ class LRUCache {
       }
     }
 
-	private:  // Data
+  private:  // Data
     std::unordered_map<Key_t, list_iterator_t> m_map;
     std::list<Key_Value_pair_t> m_list;
     unsigned int m_size;

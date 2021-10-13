@@ -20,7 +20,6 @@ kiwix_sources = [
   'tools/networkTools.cpp',
   'tools/otherTools.cpp',
   'tools/archiveTools.cpp',
-  'tools/cache.cpp',
   'kiwixserve.cpp',
   'name_mapper.cpp',
   'server/byte_range.cpp',
