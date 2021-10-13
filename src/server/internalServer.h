@@ -44,6 +44,9 @@ extern "C" {
 namespace kiwix {
 
 typedef kainjow::mustache::data MustacheData;
+typedef LRUCache<string, std::shared_ptr<zim::Searcher>> SearcherCache;
+typedef LRUCache<string, std::shared_ptr<zim::Search>> SearchCache;
+typedef LRUCache<string, std::shared_ptr<zim::SuggestionSearcher>> SuggestionSearcherCache;
 
 class Entry;
 class OPDSDumper;
@@ -115,8 +118,9 @@ class InternalServer {
     Library* mp_library;
     NameMapper* mp_nameMapper;
 
-    LRUCache<string, std::shared_ptr<zim::Searcher>> searcherCache;
-    LRUCache<string, std::shared_ptr<zim::Search>> searchCache;
+    SearcherCache searcherCache;
+    SearchCache searchCache;
+    SuggestionSearcherCache suggestionSearcherCache;
 
     std::string m_server_id;
     std::string m_library_id;
